@@ -1,6 +1,7 @@
 <template>
     <div class="big">
-        <div></div>
+        <!-- <div></div> -->
+        <router-view></router-view>
     </div>    
 </template>
 <script>
@@ -11,7 +12,7 @@ export default {
         }
     },
     mounted(){
-        debugger
+        
     }
 }
 </script>
