@@ -11,23 +11,6 @@ const config = {
         filename: 'bundle.js', // 文件输出
         path: path.join(__dirname, '/dist')
     },
-    mode: 'development',  //webpack 开发模式 --mode
-    plugins: [
-        new VueLoaderPlugin(),
-        new webpack.DefinePlugin({
-            "ENV": JSON.stringify(ENV)
-        }),
-        new HTMLPlugin({
-            hash: true,
-            title: '',
-            template: path.join(__dirname,'index.html'),
-            filename: 'index.html'
-        }), // 处理html模版
-        new MiniCssExtractPlugin({
-            filename: "css/[name].css",
-            chunkFilename: "[id].css"
-        })
-    ],
     module: {
         rules: [
             {
@@ -41,7 +24,7 @@ const config = {
                 exclude: /^node_modules$/,
             },
             {
-                test: /\.(le|c)ss$/, // 处理css文件
+                test: /\.(le|c)ss$/, // 处理css、less文件
                 use: [
                     {loader: MiniCssExtractPlugin.loader },
                     {loader: "css-loader" },
@@ -71,10 +54,30 @@ const config = {
                 exclude: /^node_modules$/,
             }
         ]
+    },
+    plugins: [
+        new VueLoaderPlugin(),
+        new webpack.DefinePlugin({   //全局变量
+            "ENV": JSON.stringify(ENV)
+        }),
+        new HTMLPlugin({
+            hash: true,
+            title: '',
+            template: path.join(__dirname,'index.html'),
+            filename: 'index.html'
+        }), // 处理html模版
+        new MiniCssExtractPlugin({  //压缩css代码
+            filename: "css/[name].css",
+            chunkFilename: "[id].css"
+        })
+    ],
+    optimization: {
+        
     }
 }
-if(ENV == 'dev'){
-    config.devtool = 'eval-source-map' // 调试代码时可以看到自己原本的代码，而不是编译后的
+if(ENV == 'development'){  //开发模式
+    config.devtool = 'cheap-module-eval-source-map'; // 调试代码时可以看到自己原本的代码，而不是编译后的
+    config.mode = 'development'; //webpack 开发模式 --mode
     config.devServer = {
         port: 8000,
         host: 'localhost',
@@ -83,10 +86,34 @@ if(ENV == 'dev'){
         },
         contentBase: "./dist",
         open: true // 在启用webpack-dev-server时，自动打开浏览器
-    }
+    };
     config.plugins.push(
-        new webpack.HotModuleReplacementPlugin(),
-        new webpack.NoEmitOnErrorsPlugin()
-    )
+        new webpack.HotModuleReplacementPlugin()
+    );
+}
+else if(ENV == 'production'){   //生产模式
+    config.devtool = false;
+    config.mode = 'production';   //webpack 生产模式 --mode  'production' 自动压缩代码
+    config.optimization.splitChunks = {
+        chunks: 'async',
+        minSize: 30000,
+        maxSize: 0,
+        minChunks: 1,
+        maxAsyncRequests: 5,
+        maxInitialRequests: 3,
+        automaticNameDelimiter: '~',
+        name: true,
+        cacheGroups: {
+            vendors: {
+                test: /[\\/]node_modules[\\/]/,
+                priority: -10
+            },
+            default: {
+                minChunks: 2,
+                priority: -20,
+                reuseExistingChunk: true
+            }
+        }
+    }
 }
 module.exports = config;
