@@ -11,7 +11,13 @@ export default {
         }
     },
     mounted(){
-        
+        this.$ajax('/sd/',{
+            type: 'get'
+        }).then(res=>{
+            console.log(ENV);
+        }).catch(err=>{
+            console.log(err);
+        })
     }
 }
 </script>
