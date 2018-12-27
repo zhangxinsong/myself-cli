@@ -6,11 +6,14 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const ENV = process.env.NODE_ENV;
 
 const config = {
-    entry: path.join(__dirname, 'src/main.js'), // 入口文件 用path.join(__dirname, 'src/index.js')将路径拼接为绝对路径
+    entry: [
+		'@babel/polyfill',
+		path.join(__dirname, 'src/main.js')
+	],
     output: {
-        filename: 'bundle.js', // 文件输出
-        path: path.join(__dirname, '/dist')
-    },
+		path: path.join(__dirname, '/dist'),
+		filename: 'js/[name].[hash:8].js'
+	},
     module: {
         rules: [
             {
@@ -66,14 +69,21 @@ const config = {
             template: path.join(__dirname,'index.html'),
             filename: 'index.html'
         }), // 处理html模版
-        new MiniCssExtractPlugin({  //压缩css代码
+        new MiniCssExtractPlugin({  //分离css代码
             filename: "css/[name].css",
-            chunkFilename: "[id].css"
+            chunkFilename: "css/[id].css"
         })
     ],
-    optimization: {
-        
-    }
+    optimization: {  
+    },
+    performance: {
+		hints: 'warning', // 枚举
+		maxAssetSize: 20240000, // 整数类型（以字节为单位）
+		maxEntrypointSize: 202400000, // 整数类型（以字节为单位
+		assetFilter: function (assetFilename) {
+			return assetFilename.endsWith('.css') || assetFilename.endsWith('.js');
+		}
+	}
 }
 if(ENV == 'development'){  //开发模式
     config.devtool = 'cheap-module-eval-source-map'; // 调试代码时可以看到自己原本的代码，而不是编译后的
@@ -92,28 +102,25 @@ if(ENV == 'development'){  //开发模式
     );
 }
 else if(ENV == 'production'){   //生产模式
-    config.devtool = false;
+    config.devtool = 'cheap-module-source-map',
     config.mode = 'production';   //webpack 生产模式 --mode  'production' 自动压缩代码
-    config.optimization.splitChunks = {
-        chunks: 'async',
-        minSize: 30000,
-        maxSize: 0,
-        minChunks: 1,
-        maxAsyncRequests: 5,
-        maxInitialRequests: 3,
-        automaticNameDelimiter: '~',
-        name: true,
-        cacheGroups: {
-            vendors: {
-                test: /[\\/]node_modules[\\/]/,
-                priority: -10
-            },
-            default: {
-                minChunks: 2,
-                priority: -20,
-                reuseExistingChunk: true
-            }
-        }
+    config.optimization = {
+        splitChunks: {
+			cacheGroups: {
+				vendor: { // node_modules内的依赖库
+					chunks: "all",
+					test: /[\\/]node_modules[\\/]/,
+					name: "vendor",
+					minChunks: 1,
+					maxInitialRequests: 5,
+					minSize: 0,
+					priority: 1
+				}
+			}
+		},
+		runtimeChunk: {
+			name: 'manifest'
+		}
     }
 }
 module.exports = config;
